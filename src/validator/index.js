@@ -52,14 +52,17 @@ const userResetForgotPasswordValidator = () => {
   return [body("newPassword").notEmpty().withMessage("Password is required")];
 };
 
-const createProjectValidator = () => {
+// Task validators (replaces project validators)
+const createTaskValidator = () => {
   return [
-    body("name").notEmpty().withMessage("Name is required"),
+    body("title").notEmpty().withMessage("Title is required"),
     body("description").optional(),
+    body("assignedTo").optional(),
+    body("status").optional(),
   ];
 };
 
-const addMemberToProjectValidator = () => {
+const addMemberToTaskValidator = () => {
   return [
     body("email")
       .trim()
@@ -75,12 +78,18 @@ const addMemberToProjectValidator = () => {
   ];
 };
 
+// Legacy validators (for backward compatibility during migration)
+const createProjectValidator = createTaskValidator;
+const addMemberToProjectValidator = addMemberToTaskValidator;
+
 export {
   userRegisterValidator,
   userLoginValidator,
   userChangeCurrentPasswordValidator,
   userForgotPasswordValidator,
   userResetForgotPasswordValidator,
+  createTaskValidator,
+  addMemberToTaskValidator,
   createProjectValidator,
   addMemberToProjectValidator,
 };

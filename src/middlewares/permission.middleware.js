@@ -1,36 +1,40 @@
 import { User } from "../models/user.model.js";
-import { ProjectMember } from "../models/projectmember.models.js";
+import { TaskMember } from "../models/projectmember.models.js";
 import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
-export const validateProjectPermission = (roles = []) => {
+// Task permission validation (replaces project permission)
+export const validateTaskPermission = (roles = []) => {
   return asyncHandler(async (req, res, next) => {
-    const { projectId } = req.params;
+    const { taskId } = req.params;
 
-    if (!projectId) {
-      throw new ApiError(400, "Project ID is missing");
+    if (!taskId) {
+      throw new ApiError(400, "Task ID is missing");
     }
 
-    //it is projectMember with a project, not exactly a project
-    const project = await ProjectMember.findOne({
-      project: new mongoose.Types.ObjectId(projectId),
+    //it is taskMember with a task, not exactly a task
+    const taskMembership = await TaskMember.findOne({
+      task: new mongoose.Types.ObjectId(taskId),
       user: new mongoose.Types.ObjectId(req.user._id),
     });
 
-    if (!project) {
-      throw new ApiError(400, "Project not found");
+    if (!taskMembership) {
+      throw new ApiError(400, "Task not found or you are not a member");
     }
 
-    const givenRole = project?.role;
+    const givenRole = taskMembership?.role;
 
     req.user.role = givenRole;
 
     if (!roles.includes(givenRole)) {
-      throw new ApiError(403, "You donot have access to perform this action");
+      throw new ApiError(403, "You do not have access to perform this action");
     }
 
     next();
   });
 };
+
+// Legacy alias for backward compatibility during migration
+export const validateProjectPermission = validateTaskPermission;

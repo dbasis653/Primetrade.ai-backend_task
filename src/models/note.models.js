@@ -1,10 +1,10 @@
 import mongoose, { Schema } from "mongoose";
 
-const projectNoteSchema = new Schema(
+const taskNoteSchema = new Schema(
   {
-    project: {
+    task: {
       type: Schema.Types.ObjectId,
-      ref: "Project",
+      ref: "Task",
       required: true,
     },
     createdBy: {
@@ -20,4 +20,7 @@ const projectNoteSchema = new Schema(
   { timestamps: true },
 );
 
-export const ProjectNote = mongoose.model("ProjectNote", projectNoteSchema);
+export const TaskNote = mongoose.model("TaskNote", taskNoteSchema);
+
+// Legacy export for backward compatibility during migration
+export const ProjectNote = TaskNote;

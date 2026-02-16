@@ -8,12 +8,6 @@ import { ApiError } from "../utils/api-error.js";
 
 import mongoose from "mongoose";
 import { AvailableUserRole, UserRolesEnum } from "../utils/constants.js";
-// import {
-//   emailVerificationMailContent,
-//   forgotPasswordMailContent,
-//   sendEmail,
-// } from "../utils/mail.js";
-// import jwt from "jsonwebtoken";
 
 const getProjects = asyncHandler(async (req, res) => {
   //Not all, but get the project which you have created
