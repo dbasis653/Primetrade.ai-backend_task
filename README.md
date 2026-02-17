@@ -9,6 +9,18 @@ Scalable REST API with JWT Authentication, Role-Based Access Control, and Task M
 
 ---
 
+## Assumptions
+
+- An Admin user is manually configured in the database.
+- The current Admin credentials are:
+
+  Email: prime_trade@gmail.com  
+  Password: 12345678
+
+- Only the Admin user has permission to create and update tasks.
+
+---
+
 ## Project Structure
 
 ```
