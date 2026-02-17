@@ -63,12 +63,8 @@ const createTaskValidator = () => {
 
 const addMemberToTaskValidator = () => {
   return [
-    body("email")
-      .trim()
-      .notEmpty()
-      .withMessage("Email is required")
-      .isEmail()
-      .withMessage("Invalid email"),
+    body("userId").optional().isMongoId().withMessage("Invalid userId"),
+    body("email").optional().isEmail().withMessage("Invalid email"),
   ];
 };
 

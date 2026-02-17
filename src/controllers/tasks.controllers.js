@@ -13,7 +13,7 @@ import mongoose from "mongoose";
 const getTasks = asyncHandler(async (req, res) => {
   // Global admin sees ALL tasks
   if (req.user.role === "global-admin") {
-    const tasks = await Task.find({});
+    const tasks = await Task.find({}).populate("assignedTo", "username fullName avatar");
     return res
       .status(200)
       .json(new ApiResponse(200, tasks, "Tasks fetched successfully"));
@@ -48,6 +48,27 @@ const getTasks = asyncHandler(async (req, res) => {
               },
             },
           },
+          {
+            $project: { taskmembers: 0 },
+          },
+          {
+            $lookup: {
+              from: "users",
+              localField: "assignedTo",
+              foreignField: "_id",
+              as: "assignedTo",
+              pipeline: [
+                {
+                  $project: { _id: 1, username: 1, fullName: 1, avatar: 1 },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              assignedTo: { $arrayElemAt: ["$assignedTo", 0] },
+            },
+          },
         ],
       },
     },
@@ -55,18 +76,7 @@ const getTasks = asyncHandler(async (req, res) => {
       $unwind: "$task",
     },
     {
-      $project: {
-        task: {
-          _id: 1,
-          title: 1,
-          description: 1,
-          members: 1,
-          createdBy: 1,
-          status: 1,
-          createdAt: 1,
-        },
-        _id: 0,
-      },
+      $replaceRoot: { newRoot: "$task" },
     },
   ]);
 
@@ -183,6 +193,18 @@ const createTask = asyncHandler(async (req, res) => {
     attachments,
   });
 
+  // Ensure assigned user is a task member
+  if (task.assignedTo) {
+    const assignedUser = await User.findById(task.assignedTo).select("username");
+    if (assignedUser) {
+      await TaskMember.findOneAndUpdate(
+        { user: task.assignedTo, task: task._id },
+        { user: task.assignedTo, task: task._id, username: assignedUser.username },
+        { upsert: true, new: true },
+      );
+    }
+  }
+
   return res
     .status(201)
     .json(new ApiResponse(201, task, "Task created successfully"));
@@ -204,6 +226,18 @@ const updateTask = asyncHandler(async (req, res) => {
 
   if (!task) {
     throw new ApiError(404, "Task not found");
+  }
+
+  // Ensure assigned user is a task member
+  if (updateData.assignedTo) {
+    const assignedUser = await User.findById(task.assignedTo).select("username");
+    if (assignedUser) {
+      await TaskMember.findOneAndUpdate(
+        { user: task.assignedTo, task: task._id },
+        { user: task.assignedTo, task: task._id, username: assignedUser.username },
+        { upsert: true, new: true },
+      );
+    }
   }
 
   return res
@@ -231,10 +265,16 @@ const deleteTask = asyncHandler(async (req, res) => {
 
 // Add members to task (formerly addMembersToProject)
 const addMembersToTask = asyncHandler(async (req, res) => {
-  const { email } = req.body;
+  const { userId, email } = req.body;
   const { taskId } = req.params;
 
-  const user = await User.findOne({ email });
+  if (!userId && !email) {
+    throw new ApiError(400, "Provide userId or email");
+  }
+
+  const user = userId
+    ? await User.findById(userId)
+    : await User.findOne({ email });
 
   if (!user) {
     throw new ApiError(404, "User does not exist");
@@ -248,6 +288,7 @@ const addMembersToTask = asyncHandler(async (req, res) => {
     {
       user: new mongoose.Types.ObjectId(user._id),
       task: new mongoose.Types.ObjectId(taskId),
+      username: user.username,
     },
     {
       new: true,
@@ -288,6 +329,7 @@ const getTaskMembers = asyncHandler(async (req, res) => {
               username: 1,
               fullName: 1,
               avatar: 1,
+              email: 1,
             },
           },
         ],

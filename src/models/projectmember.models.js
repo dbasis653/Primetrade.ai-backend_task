@@ -12,9 +12,16 @@ const taskMemberSchema = new Schema(
       ref: "Task",
       required: true,
     },
+    username: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true },
 );
+
+// Prevent the same user from being added to the same task twice at DB level
+taskMemberSchema.index({ user: 1, task: 1 }, { unique: true });
 
 export const TaskMember = mongoose.model("TaskMember", taskMemberSchema);
 
