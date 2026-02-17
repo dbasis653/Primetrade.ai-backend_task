@@ -8,11 +8,18 @@ import { asyncHandler } from "../utils/async-handler.js";
 import { ApiError } from "../utils/api-error.js";
 
 import mongoose from "mongoose";
-import { AvailableUserRole, UserRolesEnum } from "../utils/constants.js";
 
 // Get all tasks for the authenticated user (formerly getProjects)
 const getTasks = asyncHandler(async (req, res) => {
-  // Get all tasks where the user is a member
+  // Global admin sees ALL tasks
+  if (req.user.role === "global-admin") {
+    const tasks = await Task.find({});
+    return res
+      .status(200)
+      .json(new ApiResponse(200, tasks, "Tasks fetched successfully"));
+  }
+
+  // Regular user sees only tasks they are a member of
   const tasks = await TaskMember.aggregate([
     {
       $match: {
@@ -58,7 +65,6 @@ const getTasks = asyncHandler(async (req, res) => {
           status: 1,
           createdAt: 1,
         },
-        role: 1,
         _id: 0,
       },
     },
@@ -72,6 +78,7 @@ const getTasks = asyncHandler(async (req, res) => {
 // Get task by ID (formerly getProjectById)
 const getTaskById = asyncHandler(async (req, res) => {
   const { taskId } = req.params;
+
   const task = await Task.aggregate([
     {
       $match: {
@@ -150,6 +157,7 @@ const getTaskById = asyncHandler(async (req, res) => {
 });
 
 // Create a new task (formerly createProject)
+// Only global-admin can create tasks (enforced at route level)
 const createTask = asyncHandler(async (req, res) => {
   const { title, description, assignedTo, status } = req.body;
 
@@ -173,13 +181,6 @@ const createTask = asyncHandler(async (req, res) => {
     assignedBy: new mongoose.Types.ObjectId(req.user._id),
     status,
     attachments,
-  });
-
-  // Creator of the task should also be ADMIN of the task
-  await TaskMember.create({
-    user: new mongoose.Types.ObjectId(req.user._id),
-    task: new mongoose.Types.ObjectId(task._id),
-    role: UserRolesEnum.ADMIN,
   });
 
   return res
@@ -230,7 +231,7 @@ const deleteTask = asyncHandler(async (req, res) => {
 
 // Add members to task (formerly addMembersToProject)
 const addMembersToTask = asyncHandler(async (req, res) => {
-  const { email, role } = req.body;
+  const { email } = req.body;
   const { taskId } = req.params;
 
   const user = await User.findOne({ email });
@@ -239,7 +240,7 @@ const addMembersToTask = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User does not exist");
   }
 
-  await TaskMember.findOneAndUpdate(
+  const taskMember = await TaskMember.findOneAndUpdate(
     {
       user: new mongoose.Types.ObjectId(user._id),
       task: new mongoose.Types.ObjectId(taskId),
@@ -247,17 +248,16 @@ const addMembersToTask = asyncHandler(async (req, res) => {
     {
       user: new mongoose.Types.ObjectId(user._id),
       task: new mongoose.Types.ObjectId(taskId),
-      role: role,
     },
     {
       new: true,
       upsert: true,
     },
-  );
+  ).populate("user", "username fullName avatar");
 
   return res
     .status(201)
-    .json(new ApiResponse(201, {}, "Task member added successfully"));
+    .json(new ApiResponse(201, taskMember, "Task member added successfully"));
 });
 
 // Get task members (formerly getProjectMembers)
@@ -304,7 +304,6 @@ const getTaskMembers = asyncHandler(async (req, res) => {
       $project: {
         task: 1,
         user: 1,
-        role: 1,
         createdAt: 1,
         updatedAt: 1,
         _id: 0,
@@ -315,45 +314,6 @@ const getTaskMembers = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, taskMembers, "Task members fetched"));
-});
-
-// Update member role (formerly updateMemberRole)
-const updateMemberRole = asyncHandler(async (req, res) => {
-  const { taskId, userId } = req.params;
-  const { newRole } = req.body;
-
-  if (!AvailableUserRole.includes(newRole)) {
-    throw new ApiError(400, "Invalid Role");
-  }
-
-  let taskMember = await TaskMember.findOne({
-    task: new mongoose.Types.ObjectId(taskId),
-    user: new mongoose.Types.ObjectId(userId),
-  });
-
-  if (!taskMember) {
-    throw new ApiError(400, "Task member not found");
-  }
-
-  taskMember = await TaskMember.findByIdAndUpdate(
-    taskMember._id,
-    {
-      role: newRole,
-    },
-    {
-      new: true,
-    },
-  );
-
-  if (!taskMember) {
-    throw new ApiError(400, "Task member not found");
-  }
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, taskMember, "Task member role updated successfully"),
-    );
 });
 
 // Delete member (formerly deleteMember)
@@ -401,7 +361,6 @@ export {
   deleteTask,
   addMembersToTask,
   getTaskMembers,
-  updateMemberRole,
   deleteMember,
   createSubTask,
   updateSubTask,

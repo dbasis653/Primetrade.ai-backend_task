@@ -1,10 +1,10 @@
-export const UserRolesEnum = {
-  ADMIN: "admin",
-  // PROJECT_ADMIN: "project_admin",
-  MEMBER: "user",
+// System-level (global) roles stored on the User document itself
+export const UserSystemRoles = {
+  ADMIN: "global-admin",
+  USER: "user",
 };
 
-export const AvailableUserRole = Object.values(UserRolesEnum);
+export const AvailableUserSystemRoles = Object.values(UserSystemRoles);
 
 export const TaskStatusEnum = {
   TODO: "todo",

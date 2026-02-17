@@ -1,5 +1,4 @@
 import mongoose, { Schema } from "mongoose";
-import { AvailableUserRole, UserRolesEnum } from "../utils/constants.js";
 
 const taskMemberSchema = new Schema(
   {
@@ -12,12 +11,6 @@ const taskMemberSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "Task",
       required: true,
-    },
-    role: {
-      type: String,
-      enum: AvailableUserRole,
-      //"This field can have only one value from a fixed list of allowed values."
-      default: UserRolesEnum.MEMBER,
     },
   },
   { timestamps: true },

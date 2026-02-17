@@ -7,7 +7,6 @@ import {
   deleteTask,
   addMembersToTask,
   getTaskMembers,
-  updateMemberRole,
   deleteMember,
   createSubTask,
   updateSubTask,
@@ -20,8 +19,7 @@ import {
 } from "../validator/index.js";
 
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { validateTaskPermission } from "../middlewares/permission.middleware.js";
-import { AvailableUserRole, UserRolesEnum } from "../utils/constants.js";
+import { verifyPermission } from "../middlewares/permission.middleware.js";
 
 const router = Router();
 
@@ -31,29 +29,29 @@ router.use(verifyJWT);
 router
   .route("/")
   .get(getTasks)
-  .post(createTaskValidator(), validate, createTask);
-//GET & POST together bcz at the same route with a GET req one can get all tasks and with POST req it can also create a task
+  .post(
+    verifyPermission(["global-admin"]),
+    createTaskValidator(),
+    validate,
+    createTask,
+  );
 
 router
   .route("/:taskId")
-  .get(validateTaskPermission(AvailableUserRole), getTaskById)
+  .get(getTaskById)
   .put(
-    validateTaskPermission([UserRolesEnum.ADMIN, UserRolesEnum.MEMBER]),
+    verifyPermission(["global-admin"]),
     createTaskValidator(),
     validate,
     updateTask,
   )
-  .delete(validateTaskPermission([UserRolesEnum.ADMIN]), deleteTask);
-//.get(validateTaskPermission(AvailableUserRole), getTaskById)
-//means ALL ROLE IS ABLE TO PERFORM
-//validateTaskPermission([UserRolesEnum.ADMIN, UserRolesEnum.MEMBER]),
-//means ADMIN & MEMBER IS ABLE TO PERFORM
+  .delete(verifyPermission(["global-admin"]), deleteTask);
 
 router
   .route("/:taskId/members")
   .get(getTaskMembers)
   .post(
-    validateTaskPermission([UserRolesEnum.ADMIN]),
+    verifyPermission(["global-admin"]),
     addMemberToTaskValidator(),
     validate,
     addMembersToTask,
@@ -61,13 +59,10 @@ router
 
 router
   .route("/:taskId/members/:userId")
-  .put(validateTaskPermission([UserRolesEnum.ADMIN]), updateMemberRole)
-  .delete(validateTaskPermission([UserRolesEnum.ADMIN]), deleteMember);
+  .delete(verifyPermission(["global-admin"]), deleteMember);
 
 // Subtask routes
-router
-  .route("/:taskId/subtasks")
-  .post(createSubTask);
+router.route("/:taskId/subtasks").post(createSubTask);
 
 router
   .route("/:taskId/subtasks/:subtaskId")

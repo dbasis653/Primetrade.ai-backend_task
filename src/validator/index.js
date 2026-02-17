@@ -1,5 +1,4 @@
 import { body } from "express-validator";
-import { AvailableUserRole } from "../utils/constants.js";
 
 //userRegisterValidator() does NOT send errors.
 //It only defines validation rules.
@@ -70,11 +69,6 @@ const addMemberToTaskValidator = () => {
       .withMessage("Email is required")
       .isEmail()
       .withMessage("Invalid email"),
-    body("role")
-      .notEmpty()
-      .withMessage("Role is required")
-      .isIn(AvailableUserRole)
-      .withMessage("Role is invalid"),
   ];
 };
 

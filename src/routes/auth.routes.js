@@ -10,6 +10,8 @@ import {
   resetForgotPassword,
   verifyEmail,
   changeCurrentPassword,
+  getAllUsers,
+  deleteUser,
 } from "../controllers/auth.controller.js";
 import { validate } from "../middlewares/validator.middleware.js";
 import {
@@ -21,6 +23,7 @@ import {
 } from "../validator/index.js";
 
 import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyPermission } from "../middlewares/permission.middleware.js";
 
 const router = Router();
 
@@ -61,5 +64,14 @@ router
 router
   .route("/resend-email-verification")
   .post(verifyJWT, resendEmailVerification);
+
+// Admin-only routes
+router
+  .route("/users")
+  .get(verifyJWT, verifyPermission(["global-admin"]), getAllUsers);
+
+router
+  .route("/users/:userId")
+  .delete(verifyJWT, verifyPermission(["global-admin"]), deleteUser);
 
 export default router;

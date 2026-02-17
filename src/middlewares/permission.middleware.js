@@ -1,40 +1,14 @@
-import { User } from "../models/user.model.js";
-import { TaskMember } from "../models/projectmember.models.js";
 import { ApiError } from "../utils/api-error.js";
 import { asyncHandler } from "../utils/async-handler.js";
-import jwt from "jsonwebtoken";
-import mongoose from "mongoose";
 
-// Task permission validation (replaces project permission)
-export const validateTaskPermission = (roles = []) => {
-  return asyncHandler(async (req, res, next) => {
-    const { taskId } = req.params;
-
-    if (!taskId) {
-      throw new ApiError(400, "Task ID is missing");
+// Global system-level role check (user vs global-admin)
+export const verifyPermission = (roles = []) =>
+  asyncHandler(async (req, res, next) => {
+    if (!req.user?._id) {
+      throw new ApiError(401, "Unauthorized request");
     }
-
-    //it is taskMember with a task, not exactly a task
-    const taskMembership = await TaskMember.findOne({
-      task: new mongoose.Types.ObjectId(taskId),
-      user: new mongoose.Types.ObjectId(req.user._id),
-    });
-
-    if (!taskMembership) {
-      throw new ApiError(400, "Task not found or you are not a member");
+    if (roles.includes(req.user.role)) {
+      return next();
     }
-
-    const givenRole = taskMembership?.role;
-
-    req.user.role = givenRole;
-
-    if (!roles.includes(givenRole)) {
-      throw new ApiError(403, "You do not have access to perform this action");
-    }
-
-    next();
+    throw new ApiError(403, "You are not allowed to perform this action");
   });
-};
-
-// Legacy alias for backward compatibility during migration
-export const validateProjectPermission = validateTaskPermission;
