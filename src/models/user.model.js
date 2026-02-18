@@ -69,13 +69,10 @@ const userSchema = new Schema(
 );
 
 userSchema.pre("save", async function (next) {
-  /* This hook will encrypt the PASSWORD everytime there is a change in the SCHEMA.
-  So we need to keep it within a condition that do this only when this condition appy */
-  // if (!this.isModified("password")) return next();
+  /* This hook will encrypt the PASSWORD everytime there is a change in the SCHEMA.*/
   if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
   //here, this.password is the current User document
-  // next();
 });
 
 //METHODS to check if the typed password to login is correct

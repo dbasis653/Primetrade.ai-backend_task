@@ -13,7 +13,10 @@ import mongoose from "mongoose";
 const getTasks = asyncHandler(async (req, res) => {
   // Global admin sees ALL tasks
   if (req.user.role === "global-admin") {
-    const tasks = await Task.find({}).populate("assignedTo", "username fullName avatar");
+    const tasks = await Task.find({}).populate(
+      "assignedTo",
+      "username fullName avatar",
+    );
     return res
       .status(200)
       .json(new ApiResponse(200, tasks, "Tasks fetched successfully"));
@@ -85,7 +88,7 @@ const getTasks = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, tasks, "Tasks fetched successfully"));
 });
 
-// Get task by ID (formerly getProjectById)
+// Get task by ID
 const getTaskById = asyncHandler(async (req, res) => {
   const { taskId } = req.params;
 
@@ -166,7 +169,7 @@ const getTaskById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, task[0], "Task fetched successfully"));
 });
 
-// Create a new task (formerly createProject)
+// Create a new task
 // Only global-admin can create tasks (enforced at route level)
 const createTask = asyncHandler(async (req, res) => {
   const { title, description, assignedTo, status } = req.body;
@@ -195,11 +198,17 @@ const createTask = asyncHandler(async (req, res) => {
 
   // Ensure assigned user is a task member
   if (task.assignedTo) {
-    const assignedUser = await User.findById(task.assignedTo).select("username");
+    const assignedUser = await User.findById(task.assignedTo).select(
+      "username",
+    );
     if (assignedUser) {
       await TaskMember.findOneAndUpdate(
         { user: task.assignedTo, task: task._id },
-        { user: task.assignedTo, task: task._id, username: assignedUser.username },
+        {
+          user: task.assignedTo,
+          task: task._id,
+          username: assignedUser.username,
+        },
         { upsert: true, new: true },
       );
     }
@@ -210,7 +219,7 @@ const createTask = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, task, "Task created successfully"));
 });
 
-// Update a task (formerly updateProject)
+// Update a task
 const updateTask = asyncHandler(async (req, res) => {
   const { title, description, assignedTo, status } = req.body;
   const { taskId } = req.params;
@@ -230,11 +239,17 @@ const updateTask = asyncHandler(async (req, res) => {
 
   // Ensure assigned user is a task member
   if (updateData.assignedTo) {
-    const assignedUser = await User.findById(task.assignedTo).select("username");
+    const assignedUser = await User.findById(task.assignedTo).select(
+      "username",
+    );
     if (assignedUser) {
       await TaskMember.findOneAndUpdate(
         { user: task.assignedTo, task: task._id },
-        { user: task.assignedTo, task: task._id, username: assignedUser.username },
+        {
+          user: task.assignedTo,
+          task: task._id,
+          username: assignedUser.username,
+        },
         { upsert: true, new: true },
       );
     }
@@ -245,7 +260,7 @@ const updateTask = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, task, "Task updated successfully"));
 });
 
-// Delete a task (formerly deleteProject)
+// Delete a task
 const deleteTask = asyncHandler(async (req, res) => {
   const { taskId } = req.params;
 
@@ -263,7 +278,7 @@ const deleteTask = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, task, "Task deleted successfully"));
 });
 
-// Add members to task (formerly addMembersToProject)
+// Add members to task
 const addMembersToTask = asyncHandler(async (req, res) => {
   const { userId, email } = req.body;
   const { taskId } = req.params;
@@ -301,7 +316,7 @@ const addMembersToTask = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, taskMember, "Task member added successfully"));
 });
 
-// Get task members (formerly getProjectMembers)
+// Get task members
 const getTaskMembers = asyncHandler(async (req, res) => {
   const { taskId } = req.params;
   const task = await Task.findById(taskId);
@@ -358,7 +373,7 @@ const getTaskMembers = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, taskMembers, "Task members fetched"));
 });
 
-// Delete member (formerly deleteMember)
+// Delete member
 const deleteMember = asyncHandler(async (req, res) => {
   const { taskId, userId } = req.params;
 
@@ -382,18 +397,18 @@ const deleteMember = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, taskMember, "Task member removed successfully"));
 });
 
-// Subtask operations (to be implemented)
-const createSubTask = asyncHandler(async (req, res) => {
-  //test
-});
+// // Subtask operations (to be implemented)
+// const createSubTask = asyncHandler(async (req, res) => {
+//   //test
+// });
 
-const updateSubTask = asyncHandler(async (req, res) => {
-  //test
-});
+// const updateSubTask = asyncHandler(async (req, res) => {
+//   //test
+// });
 
-const deleteSubTask = asyncHandler(async (req, res) => {
-  //test
-});
+// const deleteSubTask = asyncHandler(async (req, res) => {
+//   //test
+// });
 
 export {
   getTasks,
@@ -404,7 +419,4 @@ export {
   addMembersToTask,
   getTaskMembers,
   deleteMember,
-  createSubTask,
-  updateSubTask,
-  deleteSubTask,
 };

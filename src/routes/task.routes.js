@@ -61,12 +61,12 @@ router
   .route("/:taskId/members/:userId")
   .delete(verifyPermission(["global-admin"]), deleteMember);
 
-// Subtask routes
-router.route("/:taskId/subtasks").post(createSubTask);
+// // Subtask routes
+// router.route("/:taskId/subtasks").post(createSubTask);
 
-router
-  .route("/:taskId/subtasks/:subtaskId")
-  .put(updateSubTask)
-  .delete(deleteSubTask);
+// router
+//   .route("/:taskId/subtasks/:subtaskId")
+//   .put(updateSubTask)
+//   .delete(deleteSubTask);
 
 export default router;

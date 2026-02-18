@@ -1,9 +1,6 @@
 import { validationResult } from "express-validator";
 import { ApiError } from "../utils/api-error.js";
 
-//Concept:
-//It will get a file, extract some error and process it.
-
 export const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (errors.isEmpty()) {
